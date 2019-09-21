@@ -26,16 +26,19 @@ import com.amazonaws.flink.refarch.utils.ElasticsearchJestSink;
 import com.amazonaws.flink.refarch.utils.GeoUtils;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
@@ -159,6 +162,10 @@ public class ProcessTaxiStream {
       pickupCounts.addSink(new ElasticsearchJestSink<>(config, indexName, "pickup_count"));
       tripDurations.addSink(new ElasticsearchJestSink<>(config, indexName, "trip_duration"));
     }
+
+
+    pickupCounts.addSink(StreamingFileSink.forRowFormat(new Path("s3a//hjinfengsource"),new SimpleStringEncoder<PickupCount>()).build());
+    //pickupCounts.addSink((new BucketingSink))
 
 
     LOG.info("Starting to consume events from stream {}", pt.getRequired("stream"));
